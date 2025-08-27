@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tapping Calculator for 3D printend Objects</title>
+    <!-- Tailwind CSS for modern, responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Using the Inter font for clean typography -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        svg {
+            display: block;
+            margin: auto;
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Calculator container -->
+    <div id="calculator-app" class="w-full max-w-4xl bg-white rounded-xl shadow-2xl px-6 pt-3 pb-8 md:px-10 md:pt-3 md:pb-8 border border-gray-200">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-center text-gray-800 mb-2">Tapping Calculator for 3D printend Objects</h1>
+        <p class="text-center text-gray-500 mb-8">This tool is a part of the open-source <strong>3D Printing repository</strong> authored by <strong>Pieter Geelen</strong>.</p>
+        <p class="text-left text-gray-500 mb-8">The goal of this project is to create better, accessible standards and a standardization process for 3D printing, with a specific focus on FDM. You can find the full repository on GitHub: <a href="https://github.com/psmgeelen/3DPrinting" class="text-blue-600 hover:underline" target="_blank">https://github.com/psmgeelen/3DPrinting</a>. </p>
+        <p class="text-left text-gray-500 mb-8">The calculator helps you determine the ideal dimensions for FDM printed threaded holes based on metric screw standards. Adjust the parameters below to find the perfect balance between thread strength, printability, and ease of tapping for your specific needs. There are also 3D printable samples to test the strength of these threads available in the repo. A static model has been provided with the default settings. In the future a paremterized model will be made available so that pull and torque tests can be done easily.</p>
+        <img src="sample.jpeg" alt="A descriptive name for the image" width="500" height="200">
+        <!-- Input Section -->
+        <div class="space-y-6">
+            <!-- Screw Size Selector -->
+            <div>
+                <label for="screw-size" class="block text-sm font-semibold text-gray-700 mb-2">Select Screw Size</label>
+                <div class="relative">
+                    <select id="screw-size" class="w-full p-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none transition-all duration-200 ease-in-out">
+                        <option value="M3">M3</option>
+                        <option value="M4">M4</option>
+                        <option value="M5">M5</option>
+                        <option value="M6">M6</option>
+                        <option value="M8">M8</option>
+                        <option value="M10">M10</option>
+                        <option value="M12">M12</option>
+                        <option value="Custom">Custom</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Custom Screw Parameters (initially hidden) -->
+            <div id="custom-params-section" class="p-4 bg-gray-50 rounded-lg border border-gray-200 hidden">
+                <h3 class="text-lg font-bold text-gray-800 mb-2">Custom Screw Properties</h3>
+                <p class="text-sm text-gray-500 mb-4">Enter the exact dimensions for your custom screw to perform the calculations.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="custom-major-diameter" class="block text-sm font-semibold text-gray-700 mb-2">Major Diameter (mm)</label>
+                        <input type="number" id="custom-major-diameter" min="0" step="0.1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 ease-in-out">
+                    </div>
+                    <div>
+                        <label for="custom-thread-pitch" class="block text-sm font-semibold text-gray-700 mb-2">Thread Pitch (mm)</label>
+                        <input type="number" id="custom-thread-pitch" min="0" step="0.1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 ease-in-out">
+                    </div>
+                    <div>
+                        <label for="custom-close-fit" class="block text-sm font-semibold text-gray-700 mb-2">Clearance Hole (Close Fit)</label>
+                        <input type="number" id="custom-close-fit" min="0" step="0.1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 ease-in-out">
+                    </div>
+                    <div>
+                        <label for="custom-standard-fit" class="block text-sm font-semibold text-gray-700 mb-2">Clearance Hole (Standard Fit)</label>
+                        <input type="number" id="custom-standard-fit" min="0" step="0.1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 ease-in-out">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Robustness Section -->
+            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="text-lg font-bold text-gray-800 mb-2">Robustness</h3>
+                <p class="text-sm text-gray-500 mb-4">These parameters control the strength of the surrounding part to prevent cracking and ensure durability. Adjust them to achieve the desired wall thickness for your print.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Delta Multiplier Input -->
+                    <div>
+                        <label for="delta-multiplier" class="block text-sm font-semibold text-gray-700 mb-2">Delta Multiplier</label>
+                        <div class="relative">
+                            <input type="number" id="delta-multiplier" value="2" min="0" step="0.1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 ease-in-out">
+                        </div>
+                        <p class="mt-1 text-xs text-gray-400">Controls the multiplier for the diameter difference.</p>
+                    </div>
+                    <!-- Buffer (mm) Input -->
+                    <div>
+                        <label for="buffer-mm" class="block text-sm font-semibold text-gray-700 mb-2">Buffer (mm)</label>
+                        <div class="relative">
+                            <input type="number" id="buffer-mm" value="1" min="0" step="0.1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 ease-in-out">
+                        </div>
+                        <p class="mt-1 text-xs text-gray-400">Adds an extra buffer for a stronger print path.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tightness of Thread Section -->
+            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="text-lg font-bold text-gray-800 mb-2">Tightness of Thread</h3>
+                <p class="text-sm text-gray-500 mb-4">These settings define the fit of the screw and the required depth for a secure thread engagement, affecting how tight the final connection will be.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Fit Percentage Input -->
+                    <div>
+                        <label for="fit-percentage" class="block text-sm font-semibold text-gray-700 mb-2">Fit Percentage (%)</label>
+                        <div class="relative">
+                            <input type="number" id="fit-percentage" value="80" min="1" max="100" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 ease-in-out">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 pointer-events-none">%</div>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-400">Controls the inner diameter for tapping (e.g., 80% of major diameter).</p>
+                    </div>
+                    <!-- Pitch Depths Input -->
+                    <div>
+                        <label for="pitch-depth-units" class="block text-sm font-semibold text-gray-700 mb-2">Pitch Depths</label>
+                        <div class="relative">
+                            <input type="number" id="pitch-depth-units" value="4" min="1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 ease-in-out">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 pointer-events-none">x</div>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-400">Sets the hole depth as a multiple of the thread pitch.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tap Preparation Section -->
+            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="text-lg font-bold text-gray-800 mb-2">Tap Preparation</h3>
+                <p class="text-sm text-gray-500 mb-4">This parameter governs the chamfer at the top of the hole, which is crucial for guiding the tap easily and preventing print errors or cracks.</p>
+                <div>
+                    <label for="chamfer-angle" class="block text-sm font-semibold text-gray-700 mb-2">Adjustable Chamfer Angle (°)</label>
+                    <div class="relative">
+                        <input type="number" id="chamfer-angle" value="60" min="10" max="80" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 ease-in-out">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 pointer-events-none">°</div>
+                        </div>
+                    <p class="mt-1 text-xs text-gray-400">Adjust the chamfer angle. This will affect the minimal depth calculation.</p>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-container" class="mt-10 hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Calculated Dimensions</h2>
+            <div id="results-table" class="bg-gray-50 rounded-lg overflow-hidden border border-gray-200 p-6">
+                <!-- Results will be injected here by JavaScript -->
+            </div>
+            
+            <!-- Diagram for visual explanation -->
+            <div id="diagram-container" class="mt-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Illustrative Diagram</h3>
+                <div id="diagram-svg-wrapper">
+                    <svg viewBox="0 0 450 400" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto">
+                        <!-- SVG content will be generated by JavaScript -->
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Data based on the user's provided Excel sheet snippet
+        const screwData = {
+            'M3': { majorDiameter: 3, threadPitch: 0.5, closeFit: 3.15, standardFit: 3.3 },
+            'M4': { majorDiameter: 4, threadPitch: 0.7, closeFit: 4.2, standardFit: 4.4 },
+            'M5': { majorDiameter: 5, threadPitch: 0.8, closeFit: 5.25, standardFit: 5.5 },
+            'M6': { majorDiameter: 6, threadPitch: 1, closeFit: 6.3, standardFit: 6.6 },
+            'M8': { majorDiameter: 8, threadPitch: 1.25, closeFit: 8.4, standardFit: 8.8 },
+            'M10': { majorDiameter: 10, threadPitch: 1.5, closeFit: 10.5, standardFit: 11 },
+            'M12': { majorDiameter: 12, threadPitch: 1.75, closeFit: 12.6, standardFit: 13.2 }
+        };
+
+        // Get references to HTML elements
+        const screwSizeSelect = document.getElementById('screw-size');
+        const customParamsSection = document.getElementById('custom-params-section'); // New element
+        const customMajorDiameterInput = document.getElementById('custom-major-diameter'); // New element
+        const customThreadPitchInput = document.getElementById('custom-thread-pitch'); // New element
+        const customCloseFitInput = document.getElementById('custom-close-fit'); // New element
+        const customStandardFitInput = document.getElementById('custom-standard-fit'); // New element
+        const fitPercentageInput = document.getElementById('fit-percentage');
+        const pitchDepthUnitsInput = document.getElementById('pitch-depth-units');
+        const deltaMultiplierInput = document.getElementById('delta-multiplier');
+        const bufferMmInput = document.getElementById('buffer-mm');
+        const chamferAngleInput = document.getElementById('chamfer-angle');
+        const resultsContainer = document.getElementById('results-container');
+        const resultsTable = document.getElementById('results-table');
+        const diagramSvg = document.querySelector('#diagram-svg-wrapper svg');
+        // Corrected the SVG namespace to fix rendering
+        const SVG_NS = "http://www.w3.org/2000/svg";
+        
+        // Function to toggle the custom screw inputs based on dropdown selection
+        function toggleCustomInputs() {
+            if (screwSizeSelect.value === 'Custom') {
+                customParamsSection.classList.remove('hidden');
+                // Hide results and clear table when custom fields appear
+                resultsContainer.classList.add('hidden');
+                resultsTable.innerHTML = `<div class="p-4 text-gray-500 text-center font-semibold">Please enter custom screw properties to calculate dimensions.</div>`;
+            } else {
+                customParamsSection.classList.add('hidden');
+                // Recalculate immediately when a standard screw is selected
+                calculateAndDisplay();
+            }
+        }
+
+        // Main calculation and display function
+        function calculateAndDisplay() {
+            try {
+                // Get selected screw size and adjustable parameters
+                const selectedSize = screwSizeSelect.value;
+                const fitPercentage = parseFloat(fitPercentageInput.value);
+                const pitchDepthUnits = parseFloat(pitchDepthUnitsInput.value);
+                const deltaMultiplier = parseFloat(deltaMultiplierInput.value);
+                const bufferMm = parseFloat(bufferMmInput.value);
+                const chamferAngle = parseFloat(chamferAngleInput.value);
+
+                // --- Determine which data to use (Standard or Custom) ---
+                let data;
+                if (selectedSize === 'Custom') {
+                    // Read data from custom input fields
+                    data = {
+                        majorDiameter: parseFloat(customMajorDiameterInput.value),
+                        threadPitch: parseFloat(customThreadPitchInput.value),
+                        closeFit: parseFloat(customCloseFitInput.value),
+                        standardFit: parseFloat(customStandardFitInput.value)
+                    };
+                    
+                    // Validate custom inputs
+                    if (Object.values(data).some(isNaN)) {
+                        // Display a message and stop if any custom input is not a number
+                        resultsTable.innerHTML = `<div class="p-4 text-red-600 text-center font-semibold">Please enter valid numbers for all custom screw properties.</div>`;
+                        resultsContainer.classList.remove('hidden');
+                        return;
+                    }
+                } else {
+                    // Use predefined screw data
+                    data = screwData[selectedSize];
+                }
+
+                // General validation for all parameters
+                if (isNaN(fitPercentage) || isNaN(pitchDepthUnits) || isNaN(chamferAngle) || isNaN(deltaMultiplier) || isNaN(bufferMm) || fitPercentage <= 0 || pitchDepthUnits <= 0 || chamferAngle < 10 || chamferAngle > 80) {
+                    throw new Error("Please enter valid, positive numbers for all fields. Chamfer angle must be between 10 and 80 degrees.");
+                }
+                
+                // Perform calculations based on the user's method
+                const majorDiameter = data.majorDiameter;
+                const threadPitch = data.threadPitch;
+                
+                // 1. Calculate Inner Diameter based on adjustable fit percentage
+                const innerDiameter = majorDiameter * (fitPercentage / 100);
+
+                // 2. Calculate Minimal Wall Thickness using the new parameterized inputs
+                const delta = majorDiameter - innerDiameter;
+                const minimalWallThickness = innerDiameter + (deltaMultiplier * delta) + bufferMm;
+                
+                // 3. Determine chamfer width and height based on the user's corrected formula
+                const chamferBase = (data.standardFit - innerDiameter) / 2;
+                const newChamferHeight = chamferBase * Math.tan(chamferAngle * Math.PI / 180);
+                
+                // 4. Calculate Minimal Depth based on adjustable pitch depths and the new chamfer height
+                const minimalDepth = (pitchDepthUnits * threadPitch) + newChamferHeight;
+
+                // 5. Calculate the Chamfered Outer Diameter
+                const chamferedOuterDiameter = innerDiameter + 2 * chamferBase;
+
+                // 6. Get clearance hole values from the data
+                const closeFit = data.closeFit;
+                const standardFit = data.standardFit;
+
+                // Build the results table HTML using a two-column layout
+                let resultsHtml = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Hole Dimensions Section -->
+                        <div class="bg-white rounded-lg border border-gray-200 p-4">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2 border-gray-200">Hole Dimensions</h3>
+                            <div class="flex flex-col space-y-4">
+                                <!-- Inner Diameter -->
+                                <div class="flex flex-col">
+                                    <p class="font-bold text-gray-800">Inner Diameter (Tap Hole)</p>
+                                    <p class="text-sm text-gray-500">The diameter of the hole to be printed for tapping.</p>
+                                    <span class="text-xl font-semibold text-indigo-600 mt-2">${innerDiameter.toFixed(2)} mm</span>
+                                </div>
+                                <!-- Minimal Wall Thickness -->
+                                <div class="flex flex-col">
+                                    <p class="font-bold text-gray-800">Minimal Wall Thickness</p>
+                                    <p class="text-sm text-gray-500">The minimum diameter for the surrounding boss/cylinder to prevent cracking, based on your parameters.</p>
+                                    <span class="text-xl font-semibold text-indigo-600 mt-2">${minimalWallThickness.toFixed(2)} mm</span>
+                                </div>
+                                <!-- Minimal Depth -->
+                                <div class="flex flex-col">
+                                    <p class="font-bold text-gray-800">Minimal Depth</p>
+                                    <p class="text-sm text-gray-500">The minimum required hole depth for adequate thread engagement.</p>
+                                    <span class="text-xl font-semibold text-indigo-600 mt-2">${minimalDepth.toFixed(2)} mm</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Chamfer Dimensions Section -->
+                        <div class="bg-white rounded-lg border border-gray-200 p-4">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2 border-gray-200">Chamfer Dimensions</h3>
+                             <div class="flex flex-col space-y-4">
+                                <!-- Chamfer Width -->
+                                <div class="flex flex-col">
+                                    <p class="font-bold text-gray-800">Chamfer Width</p>
+                                    <p class="text-sm text-gray-500">The width of the chamfer at the top of the hole, calculated from the Standard Fit and Inner Diameter.</p>
+                                    <span class="text-xl font-semibold text-indigo-600 mt-2">${chamferBase.toFixed(2)} mm</span>
+                                </div>
+                                <!-- Chamfer Height -->
+                                <div class="flex flex-col">
+                                    <p class="font-bold text-gray-800">Chamfer Height</p>
+                                    <p class="text-sm text-gray-500">The height of the chamfer, dynamically calculated from the angle and Chamfer Width.</p>
+                                    <span class="text-xl font-semibold text-indigo-600 mt-2">${newChamferHeight.toFixed(2)} mm</span>
+                                </div>
+                                <!-- Chamfered Outer Diameter -->
+                                <div class="flex flex-col">
+                                    <p class="font-bold text-gray-800">Chamfered Outer Diameter</p>
+                                    <p class="text-sm text-gray-500">The outer diameter of the hole including the chamfered edges.</p>
+                                    <span class="text-xl font-semibold text-indigo-600 mt-2">${chamferedOuterDiameter.toFixed(2)} mm</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Clearance Holes Section (separate) -->
+                    <div class="p-4 bg-gray-100 mt-4 rounded-lg border border-gray-200">
+                        <p class="font-bold text-gray-800 mb-2">Clearance Holes</p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="flex flex-col">
+                                <p class="text-sm text-gray-600">Close Fit</p>
+                                <span class="text-base font-semibold text-gray-700">${closeFit.toFixed(2)} mm</span>
+                            </div>
+                             <div class="flex flex-col">
+                                <p class="text-sm text-gray-600">Standard Fit</p>
+                                <span class="text-base font-semibold text-gray-700">${standardFit.toFixed(2)} mm</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Inject the results into the DOM and make the container visible
+                resultsTable.innerHTML = resultsHtml;
+                resultsContainer.classList.remove('hidden');
+
+                // Now, dynamically draw the SVG based on calculations
+                drawDynamicDiagram({
+                    innerDiameter,
+                    minimalWallThickness,
+                    minimalDepth,
+                    chamferBase,
+                    newChamferHeight,
+                    chamferAngle,
+                    chamferedOuterDiameter
+                });
+
+            } catch (error) {
+                // Display error message
+                resultsTable.innerHTML = `<div class="p-4 text-red-600 text-center font-semibold">${error.message}</div>`;
+                resultsContainer.classList.remove('hidden');
+            }
+        }
+
+        // Function to draw the dynamic SVG diagram
+        function drawDynamicDiagram(dimensions) {
+            // Clear previous SVG content
+            while (diagramSvg.firstChild) {
+                diagramSvg.removeChild(diagramSvg.firstChild);
+            }
+            
+            // Set up margins and offsets
+            const margin = 30;
+            const textOffset = 20;
+            const textLineHeight = 16;
+            const labelMargin = 15; // Increased margin for text separation
+
+            // Calculate a single, consistent scale factor based on the largest dimension
+            const maxDimension = Math.max(dimensions.minimalWallThickness, dimensions.minimalDepth + dimensions.newChamferHeight);
+            const scale = (450 - 2 * margin - 50) / maxDimension;
+
+            // Scale all dimensions
+            const scaledInnerDiameter = dimensions.innerDiameter * scale;
+            const scaledWallThickness = dimensions.minimalWallThickness * scale;
+            const scaledMinimalDepth = dimensions.minimalDepth * scale;
+            const scaledChamferBase = dimensions.chamferBase * scale;
+            const scaledChamferHeight = dimensions.newChamferHeight * scale;
+            const scaledChamferedOuterDiameter = dimensions.chamferedOuterDiameter * scale;
+
+            // Calculate drawing coordinates, ensuring everything is centered horizontally
+            const svgWidth = 450;
+            const svgHeight = 400;
+            const centerX = svgWidth / 2;
+            const topY = margin + scaledChamferHeight + textOffset;
+            const bottomY = topY + scaledMinimalDepth;
+            const partHeight = scaledMinimalDepth + scaledChamferHeight;
+            const partY = topY - scaledChamferHeight;
+
+            // Calculate total required SVG height
+            const requiredHeight = partY + partHeight + 40 + textOffset * 2;
+            diagramSvg.setAttribute('viewBox', `0 0 ${svgWidth} ${Math.max(svgHeight, requiredHeight)}`);
+
+            // --- Draw the elements (in order to manage z-index) ---
+            
+            // 1. The main part body (a simple block)
+            const partBody = document.createElementNS(SVG_NS, 'rect');
+            partBody.setAttribute('x', centerX - scaledWallThickness / 2);
+            partBody.setAttribute('y', partY);
+            partBody.setAttribute('width', scaledWallThickness);
+            partBody.setAttribute('height', partHeight + 10);
+            partBody.setAttribute('rx', 10);
+            partBody.setAttribute('ry', 10);
+            partBody.setAttribute('fill', '#e5e7eb');
+            partBody.setAttribute('stroke', '#d1d5db');
+            partBody.setAttribute('stroke-width', 2);
+            diagramSvg.appendChild(partBody);
+
+            // 2. The hole itself
+            const threadedHole = document.createElementNS(SVG_NS, 'rect');
+            threadedHole.setAttribute('x', centerX - scaledInnerDiameter / 2);
+            threadedHole.setAttribute('y', topY);
+            threadedHole.setAttribute('width', scaledInnerDiameter);
+            threadedHole.setAttribute('height', scaledMinimalDepth + 10);
+            threadedHole.setAttribute('fill', '#4b5563');
+            diagramSvg.appendChild(threadedHole);
+
+            // 3. The chamfer, drawn as a polygon that tapers OUTWARD
+            const chamferPoly = document.createElementNS(SVG_NS, 'polygon');
+            const chamferPoints = `
+                ${centerX - scaledInnerDiameter / 2},${topY}
+                ${centerX + scaledInnerDiameter / 2},${topY}
+                ${centerX + scaledChamferedOuterDiameter / 2},${partY}
+                ${centerX - scaledChamferedOuterDiameter / 2},${partY}
+            `;
+            chamferPoly.setAttribute('points', chamferPoints);
+            chamferPoly.setAttribute('fill', '#d1d5db');
+            diagramSvg.appendChild(chamferPoly);
+
+            // --- Add Dimension Lines and Labels ---
+            const fontSize = 12;
+
+            // Chamfered Outer Diameter Dimension (TOP)
+            const chamferedOuterDiamY = partY - labelMargin;
+            const chamferedOuterDiamLine = document.createElementNS(SVG_NS, 'line');
+            chamferedOuterDiamLine.setAttribute('x1', centerX - scaledChamferedOuterDiameter / 2);
+            chamferedOuterDiamLine.setAttribute('y1', chamferedOuterDiamY);
+            chamferedOuterDiamLine.setAttribute('x2', centerX + scaledChamferedOuterDiameter / 2);
+            chamferedOuterDiamLine.setAttribute('y2', chamferedOuterDiamY);
+            chamferedOuterDiamLine.setAttribute('stroke', '#10b981');
+            chamferedOuterDiamLine.setAttribute('stroke-width', 2);
+            diagramSvg.appendChild(chamferedOuterDiamLine);
+
+            const chamferedOuterDiamText = document.createElementNS(SVG_NS, 'text');
+            chamferedOuterDiamText.setAttribute('x', centerX);
+            chamferedOuterDiamText.setAttribute('y', chamferedOuterDiamY - textOffset);
+            chamferedOuterDiamText.setAttribute('font-family', 'Inter, sans-serif');
+            chamferedOuterDiamText.setAttribute('font-size', fontSize);
+            chamferedOuterDiamText.setAttribute('fill', '#10b981');
+            chamferedOuterDiamText.setAttribute('text-anchor', 'middle');
+            chamferedOuterDiamText.setAttribute('font-weight', 'bold');
+            
+            let labelText1 = document.createElementNS(SVG_NS, 'tspan');
+            labelText1.textContent = 'Chamfered Outer Diameter';
+            chamferedOuterDiamText.appendChild(labelText1);
+
+            let valueText1 = document.createElementNS(SVG_NS, 'tspan');
+            valueText1.setAttribute('x', centerX);
+            valueText1.setAttribute('dy', '1.2em');
+            valueText1.textContent = `(${dimensions.chamferedOuterDiameter.toFixed(2)} mm)`;
+            chamferedOuterDiamText.appendChild(valueText1);
+            
+            diagramSvg.appendChild(chamferedOuterDiamText);
+
+            // Chamfer Height Dimension
+            const chamferHeightX = centerX + scaledChamferedOuterDiameter / 2 + 10;
+            const chamferHeightLine = document.createElementNS(SVG_NS, 'line');
+            chamferHeightLine.setAttribute('x1', chamferHeightX);
+            chamferHeightLine.setAttribute('y1', partY);
+            chamferHeightLine.setAttribute('x2', chamferHeightX);
+            chamferHeightLine.setAttribute('y2', topY);
+            chamferHeightLine.setAttribute('stroke', '#f97316');
+            chamferHeightLine.setAttribute('stroke-width', 2);
+            diagramSvg.appendChild(chamferHeightLine);
+
+            const chamferHeightText = document.createElementNS(SVG_NS, 'text');
+            const textPosX = chamferHeightX + 25; 
+            const textPosY = partY + (scaledChamferHeight / 2);
+            chamferHeightText.setAttribute('x', textPosX);
+            chamferHeightText.setAttribute('y', textPosY);
+            chamferHeightText.setAttribute('font-family', 'Inter, sans-serif');
+            chamferHeightText.setAttribute('font-size', fontSize);
+            chamferHeightText.setAttribute('fill', '#f97316');
+            chamferHeightText.setAttribute('text-anchor', 'middle');
+            chamferHeightText.setAttribute('font-weight', 'bold');
+            chamferHeightText.setAttribute('transform', `rotate(90, ${textPosX}, ${textPosY})`);
+            
+            let labelText2 = document.createElementNS(SVG_NS, 'tspan');
+            labelText2.textContent = 'Chamfer Height';
+            chamferHeightText.appendChild(labelText2);
+
+            let valueText2 = document.createElementNS(SVG_NS, 'tspan');
+            valueText2.setAttribute('x', textPosX);
+            valueText2.setAttribute('dy', '1.2em');
+            valueText2.textContent = `(${dimensions.newChamferHeight.toFixed(2)} mm)`;
+            chamferHeightText.appendChild(valueText2);
+
+            diagramSvg.appendChild(chamferHeightText);
+
+            // Inner Diameter Dimension
+            const innerDiamLine = document.createElementNS(SVG_NS, 'line');
+            innerDiamLine.setAttribute('x1', centerX - scaledInnerDiameter / 2);
+            innerDiamLine.setAttribute('y1', topY + scaledMinimalDepth / 2);
+            innerDiamLine.setAttribute('x2', centerX + scaledInnerDiameter / 2);
+            innerDiamLine.setAttribute('y2', topY + scaledMinimalDepth / 2);
+            innerDiamLine.setAttribute('stroke', '#10b981');
+            innerDiamLine.setAttribute('stroke-width', 2);
+            innerDiamLine.setAttribute('stroke-dasharray', '4,4');
+            diagramSvg.appendChild(innerDiamLine);
+
+            const innerDiamText = document.createElementNS(SVG_NS, 'text');
+            innerDiamText.setAttribute('x', centerX);
+            innerDiamText.setAttribute('y', topY + scaledMinimalDepth / 2 - 20);
+            innerDiamText.setAttribute('font-family', 'Inter, sans-serif');
+            innerDiamText.setAttribute('font-size', fontSize);
+            innerDiamText.setAttribute('fill', '#10b981');
+            innerDiamText.setAttribute('text-anchor', 'middle');
+            innerDiamText.setAttribute('font-weight', 'bold');
+
+            let labelText3 = document.createElementNS(SVG_NS, 'tspan');
+            labelText3.textContent = 'Inner Diameter';
+            innerDiamText.appendChild(labelText3);
+
+            let valueText3 = document.createElementNS(SVG_NS, 'tspan');
+            valueText3.setAttribute('x', centerX);
+            valueText3.setAttribute('dy', '1.2em');
+            valueText3.textContent = `(${dimensions.innerDiameter.toFixed(2)} mm)`;
+            innerDiamText.appendChild(valueText3);
+
+            diagramSvg.appendChild(innerDiamText);
+
+            // Minimal Wall Thickness Dimension (BOTTOM)
+            const outerDiamY = bottomY + labelMargin;
+            const outerDiamLine = document.createElementNS(SVG_NS, 'line');
+            outerDiamLine.setAttribute('x1', centerX - scaledWallThickness / 2);
+            outerDiamLine.setAttribute('y1', outerDiamY);
+            outerDiamLine.setAttribute('x2', centerX + scaledWallThickness / 2);
+            outerDiamLine.setAttribute('y2', outerDiamY);
+            outerDiamLine.setAttribute('stroke', '#ef4444');
+            outerDiamLine.setAttribute('stroke-width', 2);
+            diagramSvg.appendChild(outerDiamLine);
+
+            const outerDiamText = document.createElementNS(SVG_NS, 'text');
+            outerDiamText.setAttribute('x', centerX);
+            outerDiamText.setAttribute('y', outerDiamY + labelMargin + 15);
+            outerDiamText.setAttribute('font-family', 'Inter, sans-serif');
+            outerDiamText.setAttribute('font-size', fontSize);
+            outerDiamText.setAttribute('fill', '#ef4444');
+            outerDiamText.setAttribute('text-anchor', 'middle');
+            outerDiamText.setAttribute('font-weight', 'bold');
+            
+            let labelText4 = document.createElementNS(SVG_NS, 'tspan');
+            labelText4.textContent = 'Minimal Wall Thickness';
+            outerDiamText.appendChild(labelText4);
+
+            let valueText4 = document.createElementNS(SVG_NS, 'tspan');
+            valueText4.setAttribute('x', centerX);
+            valueText4.setAttribute('dy', '1.2em');
+            valueText4.textContent = `(${dimensions.minimalWallThickness.toFixed(2)} mm)`;
+            outerDiamText.appendChild(valueText4);
+
+            diagramSvg.appendChild(outerDiamText);
+
+            // Minimal Depth Dimension
+            const depthX = centerX - scaledWallThickness / 2 - labelMargin;
+            const depthLine = document.createElementNS(SVG_NS, 'line');
+            depthLine.setAttribute('x1', depthX);
+            depthLine.setAttribute('y1', partY);
+            depthLine.setAttribute('x2', depthX);
+            depthLine.setAttribute('y2', bottomY);
+            depthLine.setAttribute('stroke', '#2563eb');
+            depthLine.setAttribute('stroke-width', 2);
+            diagramSvg.appendChild(depthLine);
+
+            const depthText = document.createElementNS(SVG_NS, 'text');
+            depthText.setAttribute('x', depthX - labelMargin - 5);
+            depthText.setAttribute('y', partY + partHeight / 2);
+            depthText.setAttribute('font-family', 'Inter', 'sans-serif');
+            depthText.setAttribute('font-size', fontSize);
+            depthText.setAttribute('fill', '#2563eb');
+            depthText.setAttribute('text-anchor', 'middle');
+            depthText.setAttribute('font-weight', 'bold');
+            depthText.setAttribute('transform', `rotate(90, ${depthX - labelMargin - 5}, ${partY + partHeight / 2})`);
+
+            let labelText5 = document.createElementNS(SVG_NS, 'tspan');
+            labelText5.textContent = 'Minimal Depth';
+            depthText.appendChild(labelText5);
+
+            let valueText5 = document.createElementNS(SVG_NS, 'tspan');
+            valueText5.setAttribute('x', depthX - labelMargin - 5);
+            valueText5.setAttribute('dy', '1.2em');
+            valueText5.textContent = `(${dimensions.minimalDepth.toFixed(2)} mm)`;
+            depthText.appendChild(valueText5);
+
+            diagramSvg.appendChild(depthText);
+
+            // Chamfer Width
+            const chamferWidthY = partY + labelMargin;
+            const chamferWidthLine = document.createElementNS(SVG_NS, 'line');
+            chamferWidthLine.setAttribute('x1', centerX - scaledChamferedOuterDiameter/2);
+            chamferWidthLine.setAttribute('y1', chamferWidthY);
+            chamferWidthLine.setAttribute('x2', centerX - scaledInnerDiameter/2);
+            chamferWidthLine.setAttribute('y2', chamferWidthY);
+            chamferWidthLine.setAttribute('stroke', '#f97316');
+            chamferWidthLine.setAttribute('stroke-width', 2);
+            diagramSvg.appendChild(chamferWidthLine);
+            
+            const chamferWidthText = document.createElementNS(SVG_NS, 'text');
+            chamferWidthText.setAttribute('x', centerX - (scaledChamferedOuterDiameter/2 + scaledInnerDiameter/2)/2);
+            chamferWidthText.setAttribute('y', chamferWidthY + labelMargin);
+            chamferWidthText.setAttribute('font-family', 'Inter', 'sans-serif');
+            chamferWidthText.setAttribute('font-size', fontSize);
+            chamferWidthText.setAttribute('fill', '#f97316');
+            chamferWidthText.setAttribute('text-anchor', 'middle');
+            chamferWidthText.setAttribute('font-weight', 'bold');
+            
+            let labelText6 = document.createElementNS(SVG_NS, 'tspan');
+            labelText6.textContent = 'Chamfer Width';
+            chamferWidthText.appendChild(labelText6);
+
+            let valueText6 = document.createElementNS(SVG_NS, 'tspan');
+            valueText6.setAttribute('x', centerX - (scaledChamferedOuterDiameter/2 + scaledInnerDiameter/2)/2);
+            valueText6.setAttribute('dy', '1.2em');
+            valueText6.textContent = `(${dimensions.chamferBase.toFixed(2)} mm)`;
+            chamferWidthText.appendChild(valueText6);
+            
+            diagramSvg.appendChild(chamferWidthText);
+        }
+
+        // Add an event listener to the main dropdown to toggle the custom fields
+        screwSizeSelect.addEventListener('change', toggleCustomInputs);
+
+        // Initial check and calculation on page load
+        toggleCustomInputs();
+        if (screwSizeSelect.value !== 'Custom') {
+            calculateAndDisplay();
+        }
+
+        // Recalculate whenever an input value changes
+        fitPercentageInput.addEventListener('input', calculateAndDisplay);
+        pitchDepthUnitsInput.addEventListener('input', calculateAndDisplay);
+        deltaMultiplierInput.addEventListener('input', calculateAndDisplay);
+        bufferMmInput.addEventListener('input', calculateAndDisplay);
+        chamferAngleInput.addEventListener('input', calculateAndDisplay);
+        
+        // Add listeners for the new custom fields
+        customMajorDiameterInput.addEventListener('input', calculateAndDisplay);
+        customThreadPitchInput.addEventListener('input', calculateAndDisplay);
+        customCloseFitInput.addEventListener('input', calculateAndDisplay);
+        customStandardFitInput.addEventListener('input', calculateAndDisplay);
+        
+    </script>
+</body>
+</html>
